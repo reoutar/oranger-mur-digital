@@ -168,20 +168,12 @@
     </p>
   </div>
 
-  <script>
-    // ⚠️ IMPORTANT :
-    // Pour un vrai site public de production, il est déconseillé de laisser le token Kobo ici.
-    // Idéalement, il faut passer par un petit backend (proxy) qui cache le token côté serveur.
-    // Ici, on garde la version simple pour un mur digital hébergé sur GitHub Pages / démo.
+    <script>
+    // 👉 URL de ton backend Flask sur Render
+    const KOBO_PROXY_URL = "https://oranger-mur-backend.onrender.com/api/oranger-data"; 
+    // ⚠️ Remplace par l’URL exacte donnée par Render.
 
-    // Endpoint de données Kobo (API v2) pour ton formulaire
-    const KOBO_URL = "https://kf.kobotoolbox.org/api/v2/assets/aQL229knhzDHyFjHkrJKax/data/";
-    // 👉 Remplace VOTRE_TOKEN_KOBO_ICI par ton vrai token Kobo
-    const KOBO_TOKEN = "06a5656556501c12cc08d9aa69b2be9c78a8da85";
-
-    // Mapping des codes de sélection multiple -> fichiers image
-    // Ces images doivent exister dans ton dépôt dans le dossier "images/"
-    // ex : images/Jemengage.png, images/NonViolence.png, images/PasExcuse.png
+    // Mapping des images (doivent exister dans ton dossier /images du repo)
     const STICKER_IMAGES = {
       "jemengage": "images/Jemengage.png",
       "nonviolences": "images/NonViolence.png",
@@ -202,17 +194,13 @@
     }
 
     async function fetchKoboData() {
-      const res = await fetch(KOBO_URL, {
-        headers: {
-          "Authorization": "Token " + KOBO_TOKEN
-        }
-      });
+      const res = await fetch(KOBO_PROXY_URL);
       if (!res.ok) {
-        console.error("Erreur API Kobo:", res.status, await res.text());
-        throw new Error("Erreur de récupération des données Kobo");
+        console.error("Erreur proxy:", res.status, await res.text());
+        throw new Error("Erreur de récupération via le proxy");
       }
       const data = await res.json();
-      return data.results || [];
+      return data.results || data;
     }
 
     function renderWall(submissions) {
@@ -224,7 +212,6 @@
       const provincesCount = {};
 
       submissions.forEach(row => {
-        // 'stickers' = select_multiple => ex: "jemengage nonviolences"
         const stickers = (row.stickers || "").trim().split(" ").filter(Boolean);
         const province = row.province || "Province inconnue";
 
@@ -232,7 +219,7 @@
 
         stickers.forEach(s => {
           const imgSrc = STICKER_IMAGES[s];
-          if (!imgSrc) return; // ignore stickers inconnus
+          if (!imgSrc) return;
 
           totalTiles++;
           provincesCount[province] += 1;
@@ -271,14 +258,13 @@
         renderWall(rows);
       } catch (e) {
         console.error(e);
-        summary.textContent = "⚠️ Erreur lors du chargement des données Kobo";
+        summary.textContent = "⚠️ Erreur lors du chargement des données Kobo (via proxy)";
       }
     }
 
-    // Chargement initial
     (async () => {
       await refreshWall();
-      // Option : activer un rafraîchissement automatique toutes les 60 secondes :
+      // Option : rafraîchir automatiquement :
       // setInterval(refreshWall, 60000);
     })();
   </script>
