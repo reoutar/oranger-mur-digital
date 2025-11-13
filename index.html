@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mur Digital – #OrangerLaRDC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --blue-un: #448BCA;
+      --orange: #F58220;
+      --bg-dark: #0b1220;
+      --card: #0f172a;
+      --text-main: #f9fafb;
+      --muted: #9ca3af;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, var(--blue-un), var(--bg-dark));
+      color: var(--text-main);
+    }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--orange);
+    }
+    header p {
+      margin: 6px 0 0;
+      font-size: .95rem;
+      color: var(--text-main);
+    }
+    header span {
+      font-size: .85rem;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      max-width: 960px;
+      margin: 0 auto 12px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: .85rem;
+      color: var(--muted);
+    }
+    .toolbar button {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      background: rgba(15,23,42,.8);
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .8rem;
+    }
+    .toolbar button:hover {
+      background: rgba(15,23,42,1);
+    }
+
+    .grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: rgba(15,23,42,.95);
+      border-radius: 18px;
+      padding: 10px;
+      text-align: center;
+      box-shadow: 0 14px 30px rgba(0,0,0,.4);
+      border: 1px solid rgba(148,163,184,.25);
+      backdrop-filter: blur(10px);
+    }
+    .card img {
+      max-width: 100%;
+      border-radius: 14px;
+      display: block;
+      margin: 0 auto 8px;
+    }
+    .province {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .sticker-labels {
+      font-size: .75rem;
+      color: var(--orange);
+      margin-top: 4px;
+    }
+    .summary {
+      max-width: 960px;
+      margin: 16px auto 0;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .summary strong {
+      color: var(--orange);
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mur Digital – #OrangerLaRDC</h1>
+    <p>Visuels d’engagement collectés via la campagne digitale</p>
+    <span>Les vignettes se mettent à jour automatiquement à partir des réponses KoboToolbox.</span>
+  </header>
+
+  <div class="toolbar">
+    <div id="summaryCounts">Chargement des données…</div>
+    <button type="button" onclick="refreshWall()">
+      🔄 Actualiser les visuels
+    </button>
+  </div>
+
+  <div id="wall" class="grid"></div>
+
+  <div class="summary">
+    <p>
+      ✅ <strong>Note :</strong> ce mur digital affiche les engagements soumis via votre formulaire Kobo
+      (stickers + province). Pour respecter la confidentialité, adaptez la structure si vous ajoutez
+      des données personnelles.
+    </p>
+  </div>
+
+  <script>
+    // ⚠️ Pour un vrai déploiement sécurisé, NE PAS laisser le token ici en clair.
+    // Ici c’est une version simple pour hébergement statique (GitHub Pages / démo).
+    const KOBO_URL = "https://kf.kobotoolbox.org/api/v2/assets/aQL229knhzDHyFjHkrJKax/data/";
+    const KOBO_TOKEN = "TON_TOKEN_KOBO_ICI"; // <<< À REMPLACER PAR TON TOKEN
+
+    // Images de stickers (utilise les fichiers du dossier "images" du repo GitHub)
+    const STICKER_IMAGES = {
+      "jemengage": "images/Jemengage.png",
+      "nonviolences": "images/NonViolence.png",
+      "pasdexcuse": "images/PasExcuse.png"
+    };
+
+    function humanStickerLabel(code) {
+      switch (code) {
+        case "jemengage": return "#Jem'engage";
+        case "nonviolences": return "#NonViolences";
+        case "pasdexcuse": return "#PasD'Excuse";
+        default: return code;
+      }
+    }
+
+    async function fetchKoboData() {
+      const res = await fetch(KOBO_URL, {
+        headers: {
+          "Authorization": "Token " + KOBO_TOKEN
+        }
+      });
+      if (!res.ok) {
+        console.error("Erreur API Kobo:", res.status, await res.text());
+        throw new Error("Erreur de récupération des données Kobo");
+      }
+      const data = await res.json();
+      return data.results || [];
+    }
+
+    function renderWall(submissions) {
+      const wall = document.getElementById("wall");
+      const summary = document.getElementById("summaryCounts");
+      wall.innerHTML = "";
+
+      let totalTiles = 0;
+      const provincesCount = {};
+
+      submissions.forEach(row => {
+        const stickers = (row.stickers || "").trim().split(" ").filter(Boolean);
+        const province = row.province || "Province inconnue";
+
+        if (!provincesCount[province]) provincesCount[province] = 0;
+
+        stickers.forEach(s => {
+          const imgSrc = STICKER_IMAGES[s];
+          if (!imgSrc) return;
+
+          totalTiles++;
+          provincesCount[province] += 1;
+
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const img = document.createElement("img");
+          img.src = imgSrc;
+          img.alt = s;
+
+          const prov = document.createElement("div");
+          prov.className = "province";
+          prov.textContent = province;
+
+          const stickLbl = document.createElement("div");
+          stickLbl.className = "sticker-labels";
+          stickLbl.textContent = humanStickerLabel(s);
+
+          card.appendChild(img);
+          card.appendChild(stickLbl);
+          card.appendChild(prov);
+          wall.appendChild(card);
+        });
+      });
+
+      // Résumé simple
+      const provincesList = Object.keys(provincesCount);
+      summary.textContent = `🧩 ${totalTiles} visuels affichés · 🌍 ${provincesList.length} provinces représentées`;
+    }
+
+    async function refreshWall() {
+      const summary = document.getElementById("summaryCounts");
+      summary.textContent = "⏳ Actualisation en cours…";
+      try {
+        const rows = await fetchKoboData();
+        renderWall(rows);
+      } catch (e) {
+        console.error(e);
+        summary.textContent = "⚠️ Erreur lors du chargement des données Kobo";
+      }
+    }
+
+    // Chargement initial
+    (async () => {
+      await refreshWall();
+      // Option : activer un rafraîchissement automatique toutes les 60s
+      // setInterval(refreshWall, 60000);
+    })();
+  </script>
+</body>
+</html>
