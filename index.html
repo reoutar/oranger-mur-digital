@@ -8,14 +8,16 @@
     :root {
       --blue-un: #448BCA;
       --orange: #F58220;
-      --bg-dark: #0b1220;
-      --card: #0f172a;
+      --bg-dark: #020617;
+      --card: #020617;
       --text-main: #f9fafb;
       --muted: #9ca3af;
     }
+
     * {
       box-sizing: border-box;
     }
+
     body {
       margin: 0;
       padding: 16px;
@@ -23,51 +25,63 @@
       background: radial-gradient(circle at top, var(--blue-un), var(--bg-dark));
       color: var(--text-main);
     }
+
     header {
       text-align: center;
       margin-bottom: 24px;
     }
+
     header h1 {
       margin: 0;
-      font-size: 1.8rem;
+      font-size: 1.9rem;
       text-transform: uppercase;
       letter-spacing: .08em;
       color: var(--orange);
     }
+
     header p {
       margin: 6px 0 0;
       font-size: .95rem;
       color: var(--text-main);
     }
+
     header span {
+      display: inline-block;
+      margin-top: 4px;
       font-size: .85rem;
       color: var(--muted);
     }
 
     .toolbar {
       max-width: 960px;
-      margin: 0 auto 12px;
+      margin: 0 auto 16px;
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       gap: 8px;
       font-size: .85rem;
       color: var(--muted);
+      align-items: center;
     }
+
     .toolbar button {
       border: none;
       border-radius: 999px;
-      padding: 6px 14px;
-      background: rgba(15,23,42,.8);
+      padding: 8px 16px;
+      background: rgba(15,23,42,.9);
       color: var(--text-main);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       font-size: .8rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,.4);
+      border: 1px solid rgba(148,163,184,.4);
     }
+
     .toolbar button:hover {
       background: rgba(15,23,42,1);
+      transform: translateY(-1px);
     }
 
     .grid {
@@ -77,37 +91,44 @@
       grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 16px;
     }
+
     .card {
-      background: rgba(15,23,42,.95);
+      background: linear-gradient(135deg, rgba(15,23,42,.95), rgba(15,23,42,.85));
       border-radius: 18px;
       padding: 10px;
       text-align: center;
-      box-shadow: 0 14px 30px rgba(0,0,0,.4);
-      border: 1px solid rgba(148,163,184,.25);
-      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 30px rgba(0,0,0,.5);
+      border: 1px solid rgba(148,163,184,.3);
+      backdrop-filter: blur(12px);
     }
+
     .card img {
       max-width: 100%;
       border-radius: 14px;
       display: block;
       margin: 0 auto 8px;
     }
+
     .province {
-      font-size: .78rem;
+      font-size: .8rem;
       color: var(--muted);
       margin-top: 2px;
     }
+
     .sticker-labels {
-      font-size: .75rem;
+      font-size: .8rem;
       color: var(--orange);
       margin-top: 4px;
+      font-weight: 600;
     }
+
     .summary {
       max-width: 960px;
       margin: 16px auto 0;
       font-size: .8rem;
       color: var(--muted);
     }
+
     .summary strong {
       color: var(--orange);
     }
@@ -115,6 +136,10 @@
     @media (max-width: 600px) {
       header h1 {
         font-size: 1.4rem;
+      }
+      .toolbar {
+        flex-direction: column;
+        align-items: flex-start;
       }
     }
   </style>
@@ -144,12 +169,19 @@
   </div>
 
   <script>
-    // ⚠️ Pour un vrai déploiement sécurisé, NE PAS laisser le token ici en clair.
-    // Ici c’est une version simple pour hébergement statique (GitHub Pages / démo).
-    const KOBO_URL = "https://kf.kobotoolbox.org/api/v2/assets/aQL229knhzDHyFjHkrJKax/data/";
-    const KOBO_TOKEN = "06a5656556501c12cc08d9aa69b2be9c78a8da85"; // <<< À REMPLACER PAR TON TOKEN
+    // ⚠️ IMPORTANT :
+    // Pour un vrai site public de production, il est déconseillé de laisser le token Kobo ici.
+    // Idéalement, il faut passer par un petit backend (proxy) qui cache le token côté serveur.
+    // Ici, on garde la version simple pour un mur digital hébergé sur GitHub Pages / démo.
 
-    // Images de stickers (utilise les fichiers du dossier "images" du repo GitHub)
+    // Endpoint de données Kobo (API v2) pour ton formulaire
+    const KOBO_URL = "https://kf.kobotoolbox.org/api/v2/assets/aQL229knhzDHyFjHkrJKax/data/";
+    // 👉 Remplace VOTRE_TOKEN_KOBO_ICI par ton vrai token Kobo
+    const KOBO_TOKEN = "06a5656556501c12cc08d9aa69b2be9c78a8da85";
+
+    // Mapping des codes de sélection multiple -> fichiers image
+    // Ces images doivent exister dans ton dépôt dans le dossier "images/"
+    // ex : images/Jemengage.png, images/NonViolence.png, images/PasExcuse.png
     const STICKER_IMAGES = {
       "jemengage": "images/Jemengage.png",
       "nonviolences": "images/NonViolence.png",
@@ -158,10 +190,14 @@
 
     function humanStickerLabel(code) {
       switch (code) {
-        case "jemengage": return "#Jem'engage";
-        case "nonviolences": return "#NonViolences";
-        case "pasdexcuse": return "#PasD'Excuse";
-        default: return code;
+        case "jemengage":
+          return "#Jem'engage";
+        case "nonviolences":
+          return "#NonViolences";
+        case "pasdexcuse":
+          return "#PasD'Excuse";
+        default:
+          return code;
       }
     }
 
@@ -188,6 +224,7 @@
       const provincesCount = {};
 
       submissions.forEach(row => {
+        // 'stickers' = select_multiple => ex: "jemengage nonviolences"
         const stickers = (row.stickers || "").trim().split(" ").filter(Boolean);
         const province = row.province || "Province inconnue";
 
@@ -195,7 +232,7 @@
 
         stickers.forEach(s => {
           const imgSrc = STICKER_IMAGES[s];
-          if (!imgSrc) return;
+          if (!imgSrc) return; // ignore stickers inconnus
 
           totalTiles++;
           provincesCount[province] += 1;
@@ -205,15 +242,15 @@
 
           const img = document.createElement("img");
           img.src = imgSrc;
-          img.alt = s;
-
-          const prov = document.createElement("div");
-          prov.className = "province";
-          prov.textContent = province;
+          img.alt = humanStickerLabel(s);
 
           const stickLbl = document.createElement("div");
           stickLbl.className = "sticker-labels";
           stickLbl.textContent = humanStickerLabel(s);
+
+          const prov = document.createElement("div");
+          prov.className = "province";
+          prov.textContent = province;
 
           card.appendChild(img);
           card.appendChild(stickLbl);
@@ -222,7 +259,6 @@
         });
       });
 
-      // Résumé simple
       const provincesList = Object.keys(provincesCount);
       summary.textContent = `🧩 ${totalTiles} visuels affichés · 🌍 ${provincesList.length} provinces représentées`;
     }
@@ -242,7 +278,7 @@
     // Chargement initial
     (async () => {
       await refreshWall();
-      // Option : activer un rafraîchissement automatique toutes les 60s
+      // Option : activer un rafraîchissement automatique toutes les 60 secondes :
       // setInterval(refreshWall, 60000);
     })();
   </script>
